@@ -1,0 +1,5 @@
+name: quarkus-snappy
+title: Snappy
+version: dev
+nav:
+  - modules/ROOT/nav.adoc
