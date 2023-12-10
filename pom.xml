@@ -8,7 +8,7 @@
   </parent>
   <groupId>io.quarkiverse.snappy</groupId>
   <artifactId>quarkus-snappy-parent</artifactId>
-  <version>0</version>
+  <version>999-SNAPSHOT</version>
   <packaging>pom</packaging>
   <name>Quarkus Snappy - Parent</name>
   <modules>
@@ -20,7 +20,7 @@
     <connection>scm:git:git@github.com:quarkiverse/quarkus-snappy.git</connection>
     <developerConnection>scm:git:git@github.com:quarkiverse/quarkus-snappy.git</developerConnection>
     <url>https://github.com/quarkiverse/quarkus-snappy</url>
-    <tag>0</tag>
+    <tag>HEAD</tag>
   </scm>
   <properties>
     <compiler-plugin.version>3.11.0</compiler-plugin.version>
