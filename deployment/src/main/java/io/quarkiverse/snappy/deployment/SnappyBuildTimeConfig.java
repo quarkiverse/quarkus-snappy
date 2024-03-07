@@ -4,7 +4,7 @@ import io.quarkus.runtime.annotations.ConfigItem;
 import io.quarkus.runtime.annotations.ConfigPhase;
 import io.quarkus.runtime.annotations.ConfigRoot;
 
-@ConfigRoot(name = "kafka", phase = ConfigPhase.BUILD_TIME)
+@ConfigRoot(name = "snappy", phase = ConfigPhase.BUILD_TIME)
 public class SnappyBuildTimeConfig {
 
     /**
@@ -12,7 +12,7 @@ public class SnappyBuildTimeConfig {
      * <p>
      * This library is unpacked and loaded when the application starts.
      */
-    @ConfigItem(name = "snappy.enabled", defaultValue = "false")
+    @ConfigItem(name = "enable", defaultValue = "false")
     public boolean snappyEnabled;
 
 }
