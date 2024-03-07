@@ -54,9 +54,15 @@ class SnappyProcessor {
 
     public static final class HasSnappy implements BooleanSupplier {
 
+        private final SnappyBuildTimeConfig config;
+
+        public HasSnappy(SnappyBuildTimeConfig config) {
+            this.config = config;
+        }
+
         @Override
         public boolean getAsBoolean() {
-            return QuarkusClassLoader.isClassPresentAtRuntime("org.xerial.snappy.OSInfo");
+            return QuarkusClassLoader.isClassPresentAtRuntime("org.xerial.snappy.OSInfo") && config.snappyEnabled;
         }
     }
 }
