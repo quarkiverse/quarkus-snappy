@@ -4,7 +4,7 @@
   <parent>
     <groupId>io.quarkiverse</groupId>
     <artifactId>quarkiverse-parent</artifactId>
-    <version>15</version>
+    <version>16</version>
   </parent>
   <groupId>io.quarkiverse.snappy</groupId>
   <artifactId>quarkus-snappy-parent</artifactId>
@@ -23,11 +23,11 @@
     <tag>HEAD</tag>
   </scm>
   <properties>
-    <compiler-plugin.version>3.11.0</compiler-plugin.version>
+    <compiler-plugin.version>3.12.1</compiler-plugin.version>
     <maven.compiler.release>11</maven.compiler.release>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-    <quarkus.version>3.6.1</quarkus.version>
+    <quarkus.version>3.8.2</quarkus.version>
   </properties>
   <dependencyManagement>
     <dependencies>
