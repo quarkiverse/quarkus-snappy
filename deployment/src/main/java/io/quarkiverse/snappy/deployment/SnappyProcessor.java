@@ -32,12 +32,13 @@ class SnappyProcessor {
                 "org.xerial.snappy.SnappyOutputStream").methods().fields().build());
 
         String root = "org/xerial/snappy/native/";
+        // add linux64 native lib when targeting containers
         if (nativeImageRunner.isContainerBuild()) {
             String dir = "Linux/x86_64";
             String snappyNativeLibraryName = "libsnappyjava.so";
             String path = root + dir + "/" + snappyNativeLibraryName;
             nativeLibs.produce(new NativeImageResourceBuildItem(path));
-        } else {
+        } else { // otherwise the native lib of the platform this build runs on
             String dir = SnappyUtils.getNativeLibFolderPathForCurrentOS();
             String snappyNativeLibraryName = System.mapLibraryName("snappyjava");
             String path = root + dir + "/" + snappyNativeLibraryName;
