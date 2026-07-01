@@ -56,6 +56,9 @@ nb-configuration.xml
 .gradle/
 build/
 
+# Quarkus CLI
+.quarkus
+
 # Maven
 target/
 pom.xml.tag
