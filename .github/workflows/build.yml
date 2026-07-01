@@ -10,8 +10,6 @@ on:
       - 'LICENSE'
       - '*.md'
       - '*.adoc'
-      - '*.txt'
-      - '.all-contributorsrc'
   pull_request:
     paths-ignore:
       - '.gitignore'
@@ -19,8 +17,6 @@ on:
       - 'LICENSE'
       - '*.md'
       - '*.adoc'
-      - '*.txt'
-      - '.all-contributorsrc'
 
 permissions:
   contents: read
@@ -35,6 +31,22 @@ defaults:
     shell: bash
 
 jobs:
+  pr-title-check:
+    name: PR title check
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    steps:
+      - name: Check PR title does not use conventional commits
+        run: |
+          TITLE="${{ github.event.pull_request.title }}"
+          if echo "$TITLE" | grep -qE "^(feat|fix|docs|style|refactor|perf|test|build|ci|chore|revert)(\(.+\))?: .+"; then
+            echo "Error: PR title uses conventional commits format."
+            echo "Please use a human-readable title without prefixes like feat/, fix/, docs/, etc."
+            echo "Example: 'Upgrade Quarkus to 3.37.1' instead of 'feat: upgrade Quarkus to 3.37.1'"
+            exit 1
+          fi
+          echo "PR title check passed."
+
   build:
     name: Build on ${{ matrix.os }}
     strategy:
@@ -48,9 +60,9 @@ jobs:
         run: git config --global core.autocrlf false
         if: startsWith(matrix.os, 'windows')
 
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Set up JDK 17
-        uses: actions/setup-java@v3
+        uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: 17
@@ -59,5 +71,51 @@ jobs:
       - name: Build with Maven
         run: mvn -B clean install -Dno-format
 
-      - name: Build with Maven (Native)
-        run: mvn -B install -Dnative -Dquarkus.native.container-build -Dnative.surefire.skip
+  native-tests:
+    needs: build
+    name: Native tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+          cache: 'maven'
+
+      - name: Run native integration tests
+        run: mvn -B verify -Dnative -Dquarkus.native.container-build -Dnative.surefire.skip -Dno-format -ntp
+        working-directory: integration-tests
+
+  documentation-check:
+    name: Documentation check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+          cache: 'maven'
+
+      - name: Build with Maven
+        run: mvn -B clean install -DskipTests -Dno-format -ntp
+
+      - name: Validate documentation
+        run: |
+          STATUS=$(git status --porcelain docs/modules/ROOT/pages/includes/)
+          if [ -n "$STATUS" ]; then
+            echo "Generated documentation is not up to date."
+            echo "'git status' output after rebuilding the docs:"
+            git status
+            echo "To fix this:"
+            echo "  1. Run: mvn clean install"
+            echo "  2. Commit the generated documentation files"
+            exit 1
+          else
+            echo "Generated documentation is up to date."
+          fi
