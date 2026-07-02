@@ -15,4 +15,8 @@ public class SnappyUtils {
         return OSInfo.getNativeLibFolderPathForCurrentOS();
     }
 
+    public static String getArchName() {
+        return OSInfo.getArchName();
+    }
+
 }
