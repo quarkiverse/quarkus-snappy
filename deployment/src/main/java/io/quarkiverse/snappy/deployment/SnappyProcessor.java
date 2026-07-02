@@ -12,6 +12,7 @@ import io.quarkus.deployment.annotations.Record;
 import io.quarkus.deployment.builditem.FeatureBuildItem;
 import io.quarkus.deployment.builditem.nativeimage.NativeImageResourceBuildItem;
 import io.quarkus.deployment.builditem.nativeimage.ReflectiveClassBuildItem;
+import io.quarkus.deployment.builditem.nativeimage.RuntimeInitializedClassBuildItem;
 import io.quarkus.deployment.pkg.builditem.NativeImageRunnerBuildItem;
 import io.quarkus.deployment.pkg.steps.NativeOrNativeSourcesBuild;
 
@@ -24,21 +25,30 @@ class SnappyProcessor {
         return new FeatureBuildItem(FEATURE);
     }
 
+    /**
+     * {@code Snappy} and {@code SnappyLoader} are registered as {@link RuntimeInitializedClassBuildItem}
+     * because their static initializers extract and {@code System.load()} the native library; if
+     * that ran at build time, the load would happen on the build host's JVM instead of the
+     * compiled executable's own process.
+     */
     @BuildStep(onlyIf = { HasSnappy.class, NativeOrNativeSourcesBuild.class })
     public void build(NativeImageRunnerBuildItem nativeImageRunner,
             BuildProducer<ReflectiveClassBuildItem> reflectiveClass,
-            BuildProducer<NativeImageResourceBuildItem> nativeLibs) {
+            BuildProducer<NativeImageResourceBuildItem> nativeLibs,
+            BuildProducer<RuntimeInitializedClassBuildItem> runtimeInitializedClasses) {
         reflectiveClass.produce(ReflectiveClassBuildItem.builder("org.xerial.snappy.SnappyInputStream",
                 "org.xerial.snappy.SnappyOutputStream").methods().fields().build());
 
+        runtimeInitializedClasses.produce(new RuntimeInitializedClassBuildItem("org.xerial.snappy.Snappy"));
+        runtimeInitializedClasses.produce(new RuntimeInitializedClassBuildItem("org.xerial.snappy.SnappyLoader"));
+
         String root = "org/xerial/snappy/native/";
-        // add linux64 native lib when targeting containers
         if (nativeImageRunner.isContainerBuild()) {
             String dir = "Linux/x86_64";
             String snappyNativeLibraryName = "libsnappyjava.so";
             String path = root + dir + "/" + snappyNativeLibraryName;
             nativeLibs.produce(new NativeImageResourceBuildItem(path));
-        } else { // otherwise the native lib of the platform this build runs on
+        } else {
             String dir = SnappyUtils.getNativeLibFolderPathForCurrentOS();
             String snappyNativeLibraryName = System.mapLibraryName("snappyjava");
             String path = root + dir + "/" + snappyNativeLibraryName;
