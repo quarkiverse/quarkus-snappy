@@ -30,6 +30,10 @@ class SnappyProcessor {
      * because their static initializers extract and {@code System.load()} the native library; if
      * that ran at build time, the load would happen on the build host's JVM instead of the
      * compiled executable's own process.
+     * <p>
+     * For container builds, the OS is hardcoded to Linux because builder images are always
+     * Linux-based regardless of the host OS, but the architecture is still derived from the host
+     * (via {@link SnappyUtils#getArchName()}) since Quarkus native container builds never cross-compile.
      */
     @BuildStep(onlyIf = { HasSnappy.class, NativeOrNativeSourcesBuild.class })
     public void build(NativeImageRunnerBuildItem nativeImageRunner,
@@ -42,18 +46,16 @@ class SnappyProcessor {
         runtimeInitializedClasses.produce(new RuntimeInitializedClassBuildItem("org.xerial.snappy.Snappy"));
         runtimeInitializedClasses.produce(new RuntimeInitializedClassBuildItem("org.xerial.snappy.SnappyLoader"));
 
-        String root = "org/xerial/snappy/native/";
+        String dir;
+        String snappyNativeLibraryName;
         if (nativeImageRunner.isContainerBuild()) {
-            String dir = "Linux/x86_64";
-            String snappyNativeLibraryName = "libsnappyjava.so";
-            String path = root + dir + "/" + snappyNativeLibraryName;
-            nativeLibs.produce(new NativeImageResourceBuildItem(path));
+            dir = "Linux/" + SnappyUtils.getArchName();
+            snappyNativeLibraryName = "libsnappyjava.so";
         } else {
-            String dir = SnappyUtils.getNativeLibFolderPathForCurrentOS();
-            String snappyNativeLibraryName = System.mapLibraryName("snappyjava");
-            String path = root + dir + "/" + snappyNativeLibraryName;
-            nativeLibs.produce(new NativeImageResourceBuildItem(path));
+            dir = SnappyUtils.getNativeLibFolderPathForCurrentOS();
+            snappyNativeLibraryName = System.mapLibraryName("snappyjava");
         }
+        nativeLibs.produce(new NativeImageResourceBuildItem("org/xerial/snappy/native/" + dir + "/" + snappyNativeLibraryName));
     }
 
     @BuildStep(onlyIf = HasSnappy.class)
