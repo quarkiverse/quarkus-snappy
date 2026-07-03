@@ -37,8 +37,3 @@ byte[] decompressed = Snappy.uncompress(compressed);
 == Native Support
 
 The extension bundles native libraries for Linux, macOS, and Windows, enabling Snappy to work in native images without additional configuration.
-
-[[extension-configuration-reference]]
-== Configuration Reference
-
-include::includes/quarkus-snappy.adoc[leveloffset=+1, opts=optional]
