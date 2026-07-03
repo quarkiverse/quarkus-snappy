@@ -13,12 +13,11 @@ import org.xerial.snappy.Snappy;
 
 import io.quarkus.test.QuarkusUnitTest;
 
-public class SnappyEnabledTest {
+public class SnappyTest {
 
     @RegisterExtension
     static final QuarkusUnitTest unitTest = new QuarkusUnitTest()
-            .setArchiveProducer(() -> ShrinkWrap.create(JavaArchive.class))
-            .overrideConfigKey("quarkus.snappy.enable", "true");
+            .setArchiveProducer(() -> ShrinkWrap.create(JavaArchive.class));
 
     @Test
     public void nativeLibraryLoadedByTheRecorderIsUsableForCompression() throws IOException {

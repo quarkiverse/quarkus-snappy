@@ -85,8 +85,7 @@ jobs:
           cache: 'maven'
 
       - name: Run native integration tests
-        run: mvn -B verify -Dnative -Dquarkus.native.container-build -Dnative.surefire.skip -Dno-format -ntp
-        working-directory: integration-tests
+        run: mvn -B clean verify -Dnative -Dquarkus.native.container-build -Dnative.surefire.skip -Dno-format -ntp
 
   documentation-check:
     name: Documentation check
