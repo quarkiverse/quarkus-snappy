@@ -1,7 +1,6 @@
 package io.quarkiverse.snappy.deployment;
 
-import com.bruker.snappy.runtime.SnappyRecorder;
-
+import io.quarkiverse.snappy.runtime.SnappyRecorder;
 import io.quarkus.deployment.annotations.BuildProducer;
 import io.quarkus.deployment.annotations.BuildStep;
 import io.quarkus.deployment.annotations.ExecutionTime;
