@@ -1,5 +1,12 @@
 package io.quarkiverse.snappy.runtime;
 
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
+import java.util.Locale;
 import java.util.Optional;
 
 import org.xerial.snappy.Snappy;
@@ -19,6 +26,10 @@ import io.quarkus.runtime.annotations.Recorder;
 @Recorder
 public class SnappyRecorder {
 
+    private static final String NATIVE_LIB_FILE = "libsnappyjava.so";
+    private static final String GLIBC_RESOURCE = "/org/xerial/snappy/native/Linux/x86_64/" + NATIVE_LIB_FILE;
+    private static final String MUSL_RESOURCE = "/org/xerial/snappy/native/Linux/x86_64-musl/" + NATIVE_LIB_FILE;
+
     private final RuntimeValue<SnappyRuntimeConfig> config;
 
     public SnappyRecorder(RuntimeValue<SnappyRuntimeConfig> config) {
@@ -33,7 +44,80 @@ public class SnappyRecorder {
         setIfPresent(SnappyLoader.KEY_SNAPPY_USE_SYSTEMLIB, snappyConfig.useSystemLib());
         setIfPresent(DefaultPoolFactory.DISABLE_CACHING_PROPERTY, snappyConfig.poolDisable());
 
+        selectLibcMatchingNativeLibrary(snappyConfig);
+
         Snappy.getNativeLibraryVersion();
+    }
+
+    /**
+     * In an x86_64 Linux native executable, points Snappy at the bundled native library matching the
+     * executable's own libc. When both the glibc and musl variants are bundled (a container build, see
+     * {@code SnappyProcessor#containerNativeLibraryResources}), {@code OSInfo.getArchName()} would pick
+     * the variant based on the runtime host's {@code /lib/ld-musl-x86_64.so.1}, which can differ from
+     * the libc the executable was actually linked against and yield an {@link UnsatisfiedLinkError}. The
+     * executable's real libc is read from {@code /proc/self/maps} instead, and the matching variant is
+     * extracted and pinned with {@code org.xerial.snappy.lib.path}, which Snappy honors over its own
+     * architecture detection. Skipped outside a native image, when the user already pointed Snappy
+     * elsewhere, or when only one variant is present (a JVM run or a non-container native build, where
+     * Snappy's own detection already matches the running JVM).
+     */
+    private static void selectLibcMatchingNativeLibrary(SnappyRuntimeConfig snappyConfig) {
+        if (snappyConfig.libPath().isPresent() || snappyConfig.useSystemLib().orElse(false)) {
+            return;
+        }
+        if (!isNativeImageRuntime() || !isLinuxX8664()
+                || resourceMissing(GLIBC_RESOURCE) || resourceMissing(MUSL_RESOURCE)) {
+            return;
+        }
+
+        String resource = isMuslProcess() ? MUSL_RESOURCE : GLIBC_RESOURCE;
+        String tempDirBase = snappyConfig.tempDir().orElseGet(() -> System.getProperty("java.io.tmpdir"));
+        File extracted = extractNativeLibrary(resource, tempDirBase);
+        if (extracted != null) {
+            System.setProperty(SnappyLoader.KEY_SNAPPY_LIB_PATH, extracted.getParent());
+            System.setProperty(SnappyLoader.KEY_SNAPPY_LIB_NAME, extracted.getName());
+        }
+    }
+
+    private static boolean isNativeImageRuntime() {
+        return "runtime".equals(System.getProperty("org.graalvm.nativeimage.imagecode"));
+    }
+
+    private static boolean isLinuxX8664() {
+        String os = System.getProperty("os.name", "").toLowerCase(Locale.ROOT);
+        String arch = System.getProperty("os.arch", "").toLowerCase(Locale.ROOT);
+        return os.contains("linux") && (arch.equals("x86_64") || arch.equals("amd64"));
+    }
+
+    private static boolean isMuslProcess() {
+        try {
+            String maps = Files.readString(Path.of("/proc/self/maps"));
+            return maps.contains("ld-musl") || maps.contains("libc.musl");
+        } catch (IOException | RuntimeException e) {
+            return false;
+        }
+    }
+
+    private static boolean resourceMissing(String resource) {
+        return SnappyRecorder.class.getResource(resource) == null;
+    }
+
+    private static File extractNativeLibrary(String resource, String tempDirBase) {
+        try (InputStream in = SnappyRecorder.class.getResourceAsStream(resource)) {
+            if (in == null) {
+                return null;
+            }
+            File dir = Files.createTempDirectory(Path.of(tempDirBase), "quarkus-snappy-").toFile();
+            dir.deleteOnExit();
+            File lib = new File(dir, NATIVE_LIB_FILE);
+            Files.copy(in, lib.toPath(), StandardCopyOption.REPLACE_EXISTING);
+            lib.setReadable(true);
+            lib.setExecutable(true);
+            lib.deleteOnExit();
+            return lib;
+        } catch (IOException | RuntimeException e) {
+            return null;
+        }
     }
 
     private static void setIfPresent(String key, Optional<?> value) {
