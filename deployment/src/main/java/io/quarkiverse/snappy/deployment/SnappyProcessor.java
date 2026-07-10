@@ -1,5 +1,7 @@
 package io.quarkiverse.snappy.deployment;
 
+import java.util.List;
+
 import io.quarkiverse.snappy.runtime.SnappyRecorder;
 import io.quarkus.deployment.annotations.BuildProducer;
 import io.quarkus.deployment.annotations.BuildStep;
@@ -49,8 +51,10 @@ class SnappyProcessor {
      * {@link UnsatisfiedLinkError} in the executable.
      * <p>
      * For container builds, the OS is hardcoded to Linux because builder images are always
-     * Linux-based regardless of the host OS, but the architecture is still derived from the host
-     * (via {@link SnappyUtils#getArchName()}) since Quarkus native container builds never cross-compile.
+     * Linux-based regardless of the host OS, and the architecture is derived from the host (via
+     * {@link SnappyUtils#getArchName()}) since Quarkus native container builds never cross-compile.
+     * The libc cannot be derived the same way, so for x86_64 both variants are bundled and the
+     * recorder selects the right one at runtime (see {@link #containerNativeLibraryResources(String)}).
      */
     @BuildStep
     public void build(NativeImageRunnerBuildItem nativeImageRunner,
@@ -62,16 +66,32 @@ class SnappyProcessor {
         }
         runtimeInitializedPackages.produce(new RuntimeInitializedPackageBuildItem(NATIVE_POOL_PACKAGE));
 
-        String dir;
-        String snappyNativeLibraryName;
         if (nativeImageRunner.isContainerBuild()) {
-            dir = "Linux/" + SnappyUtils.getArchName();
-            snappyNativeLibraryName = "libsnappyjava.so";
+            for (String resource : containerNativeLibraryResources(SnappyUtils.getArchName())) {
+                nativeLibs.produce(new NativeImageResourceBuildItem(resource));
+            }
         } else {
-            dir = SnappyUtils.getNativeLibFolderPathForCurrentOS();
-            snappyNativeLibraryName = System.mapLibraryName("snappyjava");
+            String dir = SnappyUtils.getNativeLibFolderPathForCurrentOS();
+            nativeLibs.produce(new NativeImageResourceBuildItem(
+                    "org/xerial/snappy/native/" + dir + "/" + System.mapLibraryName("snappyjava")));
         }
-        nativeLibs.produce(new NativeImageResourceBuildItem("org/xerial/snappy/native/" + dir + "/" + snappyNativeLibraryName));
+    }
+
+    /**
+     * Native library resources to bundle for a container build with the given host architecture.
+     * {@code OSInfo.getArchName()} conflates architecture and libc: on x86_64 it returns
+     * {@code x86_64-musl} whenever the host has musl, regardless of the builder image's libc. Since
+     * the host cannot tell which libc the executable will use, both x86_64 variants are bundled so the
+     * recorder can pick the one matching the executable at runtime. Other architectures have a single
+     * variant and are bundled as-is.
+     */
+    static List<String> containerNativeLibraryResources(String archName) {
+        if (archName.equals("x86_64") || archName.equals("x86_64-musl")) {
+            return List.of(
+                    "org/xerial/snappy/native/Linux/x86_64/libsnappyjava.so",
+                    "org/xerial/snappy/native/Linux/x86_64-musl/libsnappyjava.so");
+        }
+        return List.of("org/xerial/snappy/native/Linux/" + archName + "/libsnappyjava.so");
     }
 
     @BuildStep
