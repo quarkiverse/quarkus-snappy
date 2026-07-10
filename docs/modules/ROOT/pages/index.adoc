@@ -37,3 +37,21 @@ byte[] decompressed = Snappy.uncompress(compressed);
 == Native Support
 
 The extension bundles native libraries for Linux, macOS, and Windows, enabling Snappy to work in native images without additional configuration.
+
+== Configuration
+
+Snappy's own knobs are exposed as Quarkus configuration properties. A property left unset keeps Snappy's own default, so a bare application needs none of them. Unlike setting the underlying `org.xerial.snappy.*` system properties directly, these are honored in native executables.
+
+[source,properties]
+----
+# Disable the caching buffer pool used by the framed streams
+quarkus.snappy.pool-disable=true
+
+# Extract the bundled native library somewhere executable when /tmp is mounted noexec
+quarkus.snappy.temp-dir=/var/tmp
+----
+
+[[extension-configuration-reference]]
+== Extension Configuration Reference
+
+include::includes/quarkus-snappy.adoc[leveloffset=+1, opts=optional]
