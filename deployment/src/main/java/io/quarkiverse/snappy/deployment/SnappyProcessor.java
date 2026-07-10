@@ -9,6 +9,7 @@ import io.quarkus.deployment.annotations.Record;
 import io.quarkus.deployment.builditem.FeatureBuildItem;
 import io.quarkus.deployment.builditem.nativeimage.NativeImageResourceBuildItem;
 import io.quarkus.deployment.builditem.nativeimage.RuntimeInitializedClassBuildItem;
+import io.quarkus.deployment.builditem.nativeimage.RuntimeInitializedPackageBuildItem;
 import io.quarkus.deployment.pkg.builditem.NativeImageRunnerBuildItem;
 
 class SnappyProcessor {
@@ -27,6 +28,14 @@ class SnappyProcessor {
             "org.xerial.snappy.BitShuffle",
             "org.xerial.snappy.BitShuffleNative"
     };
+
+    /**
+     * {@code DefaultPoolFactory} picks the {@code BufferPool} used by the framed streams from the
+     * {@code org.xerial.snappy.pool.disable} system property, read in a static field initializer. Left
+     * to build-time initialization, that property is read on the build host and the resulting pool is
+     * frozen into the image heap, so setting it on the executable has no effect.
+     */
+    private static final String NATIVE_POOL_PACKAGE = "org.xerial.snappy.pool";
 
     @BuildStep
     FeatureBuildItem feature() {
@@ -47,10 +56,12 @@ class SnappyProcessor {
     @BuildStep
     public void build(NativeImageRunnerBuildItem nativeImageRunner,
             BuildProducer<NativeImageResourceBuildItem> nativeLibs,
-            BuildProducer<RuntimeInitializedClassBuildItem> runtimeInitializedClasses) {
+            BuildProducer<RuntimeInitializedClassBuildItem> runtimeInitializedClasses,
+            BuildProducer<RuntimeInitializedPackageBuildItem> runtimeInitializedPackages) {
         for (String nativeClass : NATIVE_CLASSES) {
             runtimeInitializedClasses.produce(new RuntimeInitializedClassBuildItem(nativeClass));
         }
+        runtimeInitializedPackages.produce(new RuntimeInitializedPackageBuildItem(NATIVE_POOL_PACKAGE));
 
         String dir;
         String snappyNativeLibraryName;
