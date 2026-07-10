@@ -1,4 +1,4 @@
-package com.bruker.snappy.runtime;
+package io.quarkiverse.snappy.runtime;
 
 import org.xerial.snappy.Snappy;
 
