@@ -46,14 +46,6 @@
         </executions>
       </plugin>
       <plugin>
-        <artifactId>maven-surefire-plugin</artifactId>
-        <configuration>
-          <systemPropertyVariables>
-            <org.xerial.snappy.pool.disable>true</org.xerial.snappy.pool.disable>
-          </systemPropertyVariables>
-        </configuration>
-      </plugin>
-      <plugin>
         <artifactId>maven-failsafe-plugin</artifactId>
         <executions>
           <execution>
@@ -68,7 +60,6 @@
             <native.image.path>${project.build.directory}/${project.build.finalName}-runner</native.image.path>
             <java.util.logging.manager>org.jboss.logmanager.LogManager</java.util.logging.manager>
             <maven.home>${maven.home}</maven.home>
-            <quarkus.test.arg-line>-Dorg.xerial.snappy.pool.disable=true</quarkus.test.arg-line>
           </systemPropertyVariables>
         </configuration>
       </plugin>
