@@ -10,6 +10,7 @@ import java.util.Locale;
 import java.util.Optional;
 
 import org.xerial.snappy.Snappy;
+import org.xerial.snappy.SnappyError;
 import org.xerial.snappy.SnappyLoader;
 import org.xerial.snappy.pool.DefaultPoolFactory;
 
@@ -46,7 +47,27 @@ public class SnappyRecorder {
 
         selectLibcMatchingNativeLibrary(snappyConfig);
 
-        Snappy.getNativeLibraryVersion();
+        try {
+            Snappy.getNativeLibraryVersion();
+        } catch (LinkageError | SnappyError e) {
+            throw new IllegalStateException(
+                    nativeLoadErrorMessage(snappyConfig.useSystemLib().orElse(false), snappyConfig.tempDir()), e);
+        }
+    }
+
+    /**
+     * A message pointing at the likely cause of a native library load failure and the configuration
+     * property that addresses it, since the underlying {@link UnsatisfiedLinkError} is opaque.
+     */
+    static String nativeLoadErrorMessage(boolean useSystemLib, Optional<String> tempDir) {
+        if (useSystemLib) {
+            return "Snappy's native library failed to load. quarkus.snappy.use-system-lib is enabled, so a "
+                    + "system-installed libsnappyjava must be available on the native library path; install it "
+                    + "or unset the property to use the library bundled with the extension.";
+        }
+        String extractionDir = tempDir.orElse("the JVM temporary directory (java.io.tmpdir)");
+        return "Snappy's native library failed to load. It is extracted to " + extractionDir + " before loading; "
+                + "if that directory is mounted noexec, set quarkus.snappy.temp-dir to an executable location.";
     }
 
     /**
