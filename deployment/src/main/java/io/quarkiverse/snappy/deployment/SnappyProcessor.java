@@ -2,6 +2,8 @@ package io.quarkiverse.snappy.deployment;
 
 import java.util.List;
 
+import org.jboss.logging.Logger;
+
 import io.quarkiverse.snappy.runtime.SnappyRecorder;
 import io.quarkus.deployment.annotations.BuildProducer;
 import io.quarkus.deployment.annotations.BuildStep;
@@ -14,6 +16,8 @@ import io.quarkus.deployment.builditem.nativeimage.RuntimeInitializedPackageBuil
 import io.quarkus.deployment.pkg.builditem.NativeImageRunnerBuildItem;
 
 class SnappyProcessor {
+
+    private static final Logger LOG = Logger.getLogger(SnappyProcessor.class);
 
     private static final String FEATURE = "snappy";
 
@@ -66,15 +70,17 @@ class SnappyProcessor {
         }
         runtimeInitializedPackages.produce(new RuntimeInitializedPackageBuildItem(NATIVE_POOL_PACKAGE));
 
+        List<String> resources;
         if (nativeImageRunner.isContainerBuild()) {
-            for (String resource : containerNativeLibraryResources(SnappyUtils.getArchName())) {
-                nativeLibs.produce(new NativeImageResourceBuildItem(resource));
-            }
+            resources = containerNativeLibraryResources(SnappyUtils.getArchName());
         } else {
             String dir = SnappyUtils.getNativeLibFolderPathForCurrentOS();
-            nativeLibs.produce(new NativeImageResourceBuildItem(
-                    "org/xerial/snappy/native/" + dir + "/" + System.mapLibraryName("snappyjava")));
+            resources = List.of("org/xerial/snappy/native/" + dir + "/" + System.mapLibraryName("snappyjava"));
         }
+        for (String resource : resources) {
+            nativeLibs.produce(new NativeImageResourceBuildItem(resource));
+        }
+        LOG.infof("Bundling Snappy native library into the image: %s", String.join(", ", resources));
     }
 
     /**
