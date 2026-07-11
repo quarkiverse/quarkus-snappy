@@ -1,6 +1,11 @@
 name: Snappy
 #description: Do something useful.
 metadata:
+  codestart:
+    name: "snappy"
+    languages:
+      - "java"
+    artifact: "io.quarkiverse.snappy:quarkus-snappy:codestarts:jar:${project.version}"
 #  keywords:
 #    - snappy
 #  guide: https://quarkiverse.github.io/quarkiverse-docs/snappy/dev/ # To create and publish this guide, see https://github.com/quarkiverse/quarkiverse/wiki#documenting-your-extension

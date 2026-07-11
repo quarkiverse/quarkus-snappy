@@ -1,0 +1,8 @@
+name: snappy-codestart
+ref: snappy
+type: code
+tags: extension-codestart
+metadata:
+  title: Snappy
+  description: Fast compression and decompression backed by Snappy, working in JVM and native mode.
+  related-guide-section: https://docs.quarkiverse.io/quarkus-snappy/dev/
