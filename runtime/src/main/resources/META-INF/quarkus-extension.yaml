@@ -1,14 +1,16 @@
 name: Snappy
-#description: Do something useful.
+description: Snappy compression and decompression, in JVM and native mode
 metadata:
+  keywords:
+    - "snappy"
+    - "compression"
+    - "xerial"
+  guide: "https://docs.quarkiverse.io/quarkus-snappy/dev/"
+  categories:
+    - "data"
+  status: "preview"
   codestart:
     name: "snappy"
     languages:
       - "java"
     artifact: "io.quarkiverse.snappy:quarkus-snappy:codestarts:jar:${project.version}"
-#  keywords:
-#    - snappy
-#  guide: https://quarkiverse.github.io/quarkiverse-docs/snappy/dev/ # To create and publish this guide, see https://github.com/quarkiverse/quarkiverse/wiki#documenting-your-extension
-#  categories:
-#    - "miscellaneous"
-#  status: "preview"
