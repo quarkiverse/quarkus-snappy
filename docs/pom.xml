@@ -21,7 +21,7 @@
     </dependencies>
 
     <properties>
-        <quarkus.extension-processor.version>3.37.2</quarkus.extension-processor.version>
+        <quarkus.extension-processor.version>3.37.4</quarkus.extension-processor.version>
     </properties>
 
     <build>
