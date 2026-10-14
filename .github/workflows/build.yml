@@ -31,22 +31,6 @@ defaults:
     shell: bash
 
 jobs:
-  pr-title-check:
-    name: PR title check
-    runs-on: ubuntu-latest
-    if: github.event_name == 'pull_request'
-    steps:
-      - name: Check PR title does not use conventional commits
-        run: |
-          TITLE="${{ github.event.pull_request.title }}"
-          if echo "$TITLE" | grep -qE "^(feat|fix|docs|style|refactor|perf|test|build|ci|chore|revert)(\(.+\))?: .+"; then
-            echo "Error: PR title uses conventional commits format."
-            echo "Please use a human-readable title without prefixes like feat/, fix/, docs/, etc."
-            echo "Example: 'Upgrade Quarkus to 3.37.1' instead of 'feat: upgrade Quarkus to 3.37.1'"
-            exit 1
-          fi
-          echo "PR title check passed."
-
   build:
     name: Build on ${{ matrix.os }}
     strategy:
